@@ -1,6 +1,28 @@
 // Валидаторы форм. Идиома validator-а: null — значение ВАЛИДНО,
 // строка — текст ошибки, который Flutter сам рисует красным под полем.
 
+/// E-mail: непустой и правдоподобного формата «имя@домен.зона».
+String? validateEmail(String? value) {
+  final email = value?.trim() ?? '';
+  if (email.isEmpty) return 'Введите e-mail';
+  if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+    return 'Неверный формат e-mail';
+  }
+  return null;
+}
+
+/// Минимальная длина пароля.
+const minPasswordLength = 6;
+
+/// Пароль: не короче [minPasswordLength] символов.
+String? validatePassword(String? value) {
+  if (value == null || value.isEmpty) return 'Введите пароль';
+  if (value.length < minPasswordLength) {
+    return 'Минимум $minPasswordLength символов';
+  }
+  return null;
+}
+
 /// Название книги: обязательно (по ТЗ темы).
 String? validateBookTitle(String? value) =>
     (value == null || value.trim().isEmpty) ? 'Введите название книги' : null;
