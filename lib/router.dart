@@ -35,6 +35,14 @@ final router = GoRouter(
                   builder: (_, state) => BookDetailScreen(
                     id: int.parse(state.pathParameters['id']!),
                   ),
+                  routes: [
+                    GoRoute(
+                      path: 'edit', // /books/7/edit
+                      builder: (_, state) => BookFormScreen(
+                        bookId: int.parse(state.pathParameters['id']!),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

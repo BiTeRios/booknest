@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/format.dart';
 import '../data/mock_data.dart';
@@ -115,7 +116,7 @@ class BookDetailScreen extends StatelessWidget {
           const SizedBox(height: 24),
           if (isMine)
             OutlinedButton.icon(
-              onPressed: () {},
+              onPressed: () => context.push('/books/${book.id}/edit'),
               icon: const Icon(Icons.edit_outlined),
               label: const Text('Редактировать'),
             )
