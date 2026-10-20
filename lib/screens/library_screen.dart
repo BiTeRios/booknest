@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../widgets/book_card.dart';
 import '../widgets/genre_filter_bar.dart';
-import 'book_detail_screen.dart';
-import 'book_form_screen.dart';
 
 /// «Моя библиотека»: список своих книг с поиском и фильтром по жанру.
 /// Поиск и фильтр на L2 только визуальные — работать начнут на L4.
@@ -33,27 +31,14 @@ class LibraryScreen extends StatelessWidget {
               itemCount: mockMyBooks.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                final book = mockMyBooks[index];
-                return BookCard(
-                  book: book,
-                  // временный переход для демонстрации; на L3 — go_router
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BookDetailScreen(book: book),
-                    ),
-                  ),
-                );
+                return BookCard(book: mockMyBooks[index]);
               },
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BookFormScreen()),
-        ),
+        onPressed: () {},
         icon: const Icon(Icons.add),
         label: const Text('Добавить книгу'),
       ),

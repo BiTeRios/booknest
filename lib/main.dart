@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/login_screen.dart';
+import 'router.dart';
 
 void main() => runApp(const BookNestApp());
 
@@ -10,7 +10,9 @@ class BookNestApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    // MaterialApp.router: навигацию принимает go_router, параметра home: больше нет —
+    // стартовый экран задаёт initialLocation в router.dart.
+    return MaterialApp.router(
       title: 'BookNest',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -22,8 +24,7 @@ class BookNestApp extends StatelessWidget {
           titleLarge: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      // Приложение стартует со входа; на L3 вместо home: придёт go_router.
-      home: const LoginScreen(),
+      routerConfig: router,
     );
   }
 }

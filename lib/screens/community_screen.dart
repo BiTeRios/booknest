@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../widgets/book_card.dart';
 import '../widgets/genre_filter_bar.dart';
-import 'book_detail_screen.dart';
 
 /// «Книги сообщества»: что есть у других, с кнопкой «Запросить».
 class CommunityScreen extends StatelessWidget {
@@ -34,12 +33,6 @@ class CommunityScreen extends StatelessWidget {
                 return BookCard(
                   book: book,
                   showOwner: true,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BookDetailScreen(book: book),
-                    ),
-                  ),
                   // выданную книгу сейчас запросить нельзя — кнопки нет
                   trailing: book.status == BookStatus.available
                       ? FilledButton.tonal(

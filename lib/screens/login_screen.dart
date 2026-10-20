@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import 'home_shell.dart';
+import 'package:go_router/go_router.dart';
 
 /// Вход / регистрация. На L2 строго статический: два поля и кнопка,
 /// без Form, без validator и без проверки полей (валидация — L3, backend — L5).
@@ -60,12 +59,8 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   FilledButton(
-                    // без проверки: только переход на стартовый экран,
-                    // чтобы не блокировать демонстрацию (разрешено на L2)
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeShell()),
-                    ),
+                    // go, а не push: login уходит из стека (валидация — далее)
+                    onPressed: () => context.go('/books'),
                     child: const Text('Войти'),
                   ),
                   const SizedBox(height: 8),

@@ -9,12 +9,26 @@ import '../widgets/status_chip.dart';
 /// Карточка книги: автор, жанр, обложка, статус (доступна / выдана).
 /// Для своей книги — кнопки редактирования, для чужой — «Запросить книгу».
 class BookDetailScreen extends StatelessWidget {
-  final Book book;
+  /// Идентичность книги приходит из адреса (/books/7) — сам объект экран ищет сам.
+  final int id;
 
-  const BookDetailScreen({super.key, required this.book});
+  const BookDetailScreen({super.key, required this.id});
 
   @override
   Widget build(BuildContext context) {
+    // Сегодня поиск идёт в mock-данных, на L4 — через Repository, на L5 — в backend-е:
+    // адрес остаётся, источник данных меняется под низом.
+    final book = [
+      ...mockMyBooks,
+      ...mockCommunityBooks,
+    ].where((b) => b.id == id).firstOrNull;
+    if (book == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Книга не найдена')),
+      );
+    }
+
     final theme = Theme.of(context);
     final isMine = book.ownerId == currentUser.id;
     // Если книга выдана — показываем, у кого она и до какого срока.
