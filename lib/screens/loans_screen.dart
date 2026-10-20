@@ -59,6 +59,13 @@ class LoansScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Мои обмены'),
+          actions: [
+            IconButton(
+              tooltip: 'Обновить',
+              icon: const Icon(Icons.refresh),
+              onPressed: () => context.read<LoansModel>().load(),
+            ),
+          ],
           bottom: const TabBar(
             tabs: [
               Tab(icon: Icon(Icons.north_east), text: 'Выданные'),

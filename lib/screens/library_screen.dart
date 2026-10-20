@@ -32,7 +32,16 @@ class LibraryScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Моя библиотека')),
+      appBar: AppBar(
+        title: const Text('Моя библиотека'),
+        actions: [
+          IconButton(
+            tooltip: 'Обновить',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<LibraryModel>().load(),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(

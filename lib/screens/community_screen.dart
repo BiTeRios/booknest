@@ -53,7 +53,16 @@ class CommunityScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Книги сообщества')),
+      appBar: AppBar(
+        title: const Text('Книги сообщества'),
+        actions: [
+          IconButton(
+            tooltip: 'Обновить',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<CommunityModel>().load(),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Padding(
