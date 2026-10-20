@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
+import '../models/session_model.dart';
 import '../validators.dart';
 
 /// Вход. На L3 — локальная валидация: любые e-mail и пароль, прошедшие проверку,
@@ -29,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    // read — в callback-е: действуем, а не следим за изменениями.
+    context.read<SessionModel>().signIn(email: _emailCtrl.text.trim());
     // go, НЕ push: login уходит из стека — «назад» не вернёт в него
     // уже вошедшего пользователя.
     context.go('/books');

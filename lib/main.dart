@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
 
+import 'models/session_model.dart';
 import 'router.dart';
 
-void main() => runApp(const BookNestApp());
+void main() {
+  runApp(
+    // Модель монтируется НАД router-ом, чтобы её видели все экраны.
+    // create — фабрика: Provider создаёт модель лениво и сам вызовет dispose.
+    ChangeNotifierProvider(
+      create: (_) => SessionModel(),
+      child: const BookNestApp(),
+    ),
+  );
+}
 
 /// Корень приложения: MaterialApp и визуальная тема Material 3.
 class BookNestApp extends StatelessWidget {

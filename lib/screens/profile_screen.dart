@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../data/mock_data.dart';
+import '../models/session_model.dart';
 import '../widgets/confirm_dialog.dart';
 
 /// Профиль пользователя: данные, статистика обменов, настройки, выход.
@@ -18,6 +20,7 @@ class ProfileScreen extends StatelessWidget {
     );
     // После await context используется только под context.mounted.
     if (ok && context.mounted) {
+      context.read<SessionModel>().signOut(); // read: действие в callback-е
       context.go('/login'); // go: раздел с вкладками уходит из стека
     }
   }
@@ -32,7 +35,15 @@ class ProfileScreen extends StatelessWidget {
     final borrowedNow = mockBorrowedLoans
         .where((l) => l.status == LoanStatus.active)
         .length;
-    final initials = currentUser.name.split(' ').map((part) => part[0]).join();
+    // watch — в build: при входе/выходе профиль перерисуется сам.
+    final session = context.watch<SessionModel>();
+    final title = session.name ?? session.email ?? 'Гость';
+    final initials = title
+        .split(RegExp(r'[\s.@]+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Профиль')),
@@ -53,12 +64,12 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            currentUser.name,
+            title,
             style: theme.textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
           Text(
-            currentUser.email,
+            session.email ?? '',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: scheme.onSurfaceVariant,
             ),
