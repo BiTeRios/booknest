@@ -2,15 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'data/mock_book_repository.dart';
+import 'data/mock_loan_repository.dart';
+import 'models/book_list_model.dart';
+import 'models/loans_model.dart';
 import 'models/session_model.dart';
 import 'router.dart';
 
+/// Корень композиции: ЗДЕСЬ (и только здесь) выбирается источник данных.
 void main() {
+  final books = MockBookRepository(); // на L5: HTTP-вариант — и всё
+  final loans = MockLoanRepository(books);
+
   runApp(
-    // Модель монтируется НАД router-ом, чтобы её видели все экраны.
-    // create — фабрика: Provider создаёт модель лениво и сам вызовет dispose.
-    ChangeNotifierProvider(
-      create: (_) => SessionModel(),
+    // Модели монтируются НАД router-ом, чтобы их видели все экраны.
+    MultiProvider(
+      providers: [
+        // Леса демонстрации аварии (переключатель в профиле) — исчезнут на L5.
+        // Repository не ChangeNotifier и живёт всё приложение — .value оправдан.
+        Provider<MockBookRepository>.value(value: books),
+        Provider<MockLoanRepository>.value(value: loans),
+        // Модели — фабрикой: Provider создаёт их лениво и сам вызовет dispose.
+        // DI: хранилище — в конструктор; каскад ..load() — первая загрузка.
+        ChangeNotifierProvider(create: (_) => SessionModel()),
+        ChangeNotifierProvider(create: (_) => LibraryModel(books)..load()),
+        ChangeNotifierProvider(create: (_) => CommunityModel(books)..load()),
+        ChangeNotifierProvider(create: (_) => LoansModel(loans)..load()),
+      ],
       child: const BookNestApp(),
     ),
   );

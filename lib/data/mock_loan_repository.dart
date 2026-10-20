@@ -83,10 +83,8 @@ class MockLoanRepository implements LoanRepository {
     if (index == -1) return const Err(_errNotFound);
     _loans[index] = loan;
     if (loan.status == LoanStatus.returned) {
-      _books.setStatus(
-        loan.bookId,
-        BookStatus.available,
-      ); // книга снова свободна
+      // книга снова свободна для обмена
+      _books.setStatus(loan.bookId, BookStatus.available);
     }
     return Ok(loan);
   }

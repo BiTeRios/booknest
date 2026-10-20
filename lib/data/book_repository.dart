@@ -11,7 +11,7 @@ enum BookScope { mine, community }
 ///   fetchById → GET    /books/{id}      (404 → Err «не существует»)
 ///   create    → POST   /books           (201, id даёт сервер)
 ///   update    → PUT    /books/{id}
-///   delete    → DELETE /books/{id}      (204, пустое тело → Result<void>)
+///   delete    → DELETE /books/{id}      (204, пустое тело → `Result<void>`)
 abstract class BookRepository {
   Future<Result<List<Book>>> fetchAll({BookScope scope = BookScope.mine});
   Future<Result<Book>> fetchById(int id);
