@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../data/book.dart';
 import '../data/loan.dart';
-import '../data/mock_data.dart';
+import '../models/book_list_model.dart';
+import '../models/loans_model.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/error_view.dart';
 import '../widgets/loan_tile.dart';
 
-/// Возврат закрывает обмен — подтверждение через диалог, затем SnackBar.
-/// Реальная смена статуса обмена и книги появится на L4.
+/// Возврат закрывает обмен: подтверждение → запись через модель → SnackBar.
 Future<void> _markReturned(BuildContext context, Loan loan) async {
   final ok = await showConfirmDialog(
     context,
@@ -15,8 +18,14 @@ Future<void> _markReturned(BuildContext context, Loan loan) async {
     confirmLabel: 'Да, вернули',
   );
   if (!ok || !context.mounted) return;
+  final error = await context.read<LoansModel>().markReturned(loan);
+  if (!context.mounted) return; // экран может умереть, пока «запрос» летит
+  if (error == null) {
+    // хранилище уже освободило книгу — библиотека синхронизируется сама
+    context.read<LibraryModel>().markStatus(loan.bookId, BookStatus.available);
+  }
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Возврат отмечен: «${loan.bookTitle}»')),
+    SnackBar(content: Text(error ?? 'Возврат отмечен: «${loan.bookTitle}»')),
   );
 }
 
@@ -26,6 +35,25 @@ class LoansScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final model = context.watch<LoansModel>();
+
+    final Widget body;
+    if (model.isLoading) {
+      body = const Center(child: CircularProgressIndicator());
+    } else if (model.error != null) {
+      body = ErrorView(
+        message: model.error!,
+        onRetry: () => context.read<LoansModel>().load(),
+      );
+    } else {
+      body = TabBarView(
+        children: [
+          _LoanList(loans: model.lent, lent: true),
+          _LoanList(loans: model.borrowed, lent: false),
+        ],
+      );
+    }
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -38,12 +66,7 @@ class LoansScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            _LoanList(loans: mockLentLoans, lent: true),
-            _LoanList(loans: mockBorrowedLoans, lent: false),
-          ],
-        ),
+        body: body,
       ),
     );
   }
@@ -57,6 +80,13 @@ class _LoanList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (loans.isEmpty) {
+      return Center(
+        child: Text(
+          lent ? 'Вы пока никому не выдали книг' : 'Вы пока не брали книг',
+        ),
+      );
+    }
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: loans.length,
@@ -64,6 +94,7 @@ class _LoanList extends StatelessWidget {
       itemBuilder: (context, index) {
         final loan = loans[index];
         return LoanTile(
+          key: ValueKey(loan.id),
           loan: loan,
           lent: lent,
           // возврат отмечает владелец, и только у активного обмена
