@@ -55,6 +55,24 @@ class BookCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (showOwner) ...[
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Icon(Icons.person_outline, size: 16, color: muted),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              book.ownerName,
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: muted,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -68,13 +86,6 @@ class BookCard extends StatelessWidget {
                             color: muted,
                           ),
                         ),
-                        if (showOwner)
-                          Text(
-                            '· ${book.ownerName}',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: muted,
-                            ),
-                          ),
                       ],
                     ),
                   ],
