@@ -3,9 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../data/loan.dart';
-import '../data/mock_data.dart';
+import '../models/book_list_model.dart';
+import '../models/loans_model.dart';
 import '../models/session_model.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/error_view.dart';
 
 /// Профиль пользователя: данные, статистика обменов, настройки, выход.
 class ProfileScreen extends StatelessWidget {
@@ -30,12 +32,6 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final lentNow = mockLentLoans
-        .where((l) => l.status == LoanStatus.active)
-        .length;
-    final borrowedNow = mockBorrowedLoans
-        .where((l) => l.status == LoanStatus.active)
-        .length;
     // watch — в build: при входе/выходе профиль перерисуется сам.
     final session = context.watch<SessionModel>();
     final title = session.name ?? session.email ?? 'Гость';
@@ -77,21 +73,7 @@ class ProfileScreen extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _StatTile(value: '${mockMyBooks.length}', label: 'книг'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(value: '$lentNow', label: 'выдано'),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _StatTile(value: '$borrowedNow', label: 'взято'),
-              ),
-            ],
-          ),
+          const _Stats(),
           const SizedBox(height: 24),
           Card(
             child: Column(
@@ -126,6 +108,54 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Статистика из моделей — тоже данные из хранилища, поэтому тоже три состояния.
+class _Stats extends StatelessWidget {
+  const _Stats();
+
+  @override
+  Widget build(BuildContext context) {
+    final library = context.watch<LibraryModel>();
+    final loans = context.watch<LoansModel>();
+
+    if (library.isLoading || loans.isLoading) {
+      return const SizedBox(
+        height: 88,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if ((library.error ?? loans.error) case final error?) {
+      return ErrorView(
+        message: error,
+        onRetry: () {
+          context.read<LibraryModel>().load();
+          context.read<LoansModel>().load();
+        },
+      );
+    }
+    final lentNow = loans.lent
+        .where((l) => l.status == LoanStatus.active)
+        .length;
+    final borrowedNow = loans.borrowed
+        .where((l) => l.status == LoanStatus.active)
+        .length;
+    return Row(
+      children: [
+        Expanded(
+          child: _StatTile(value: '${library.books.length}', label: 'книг'),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(value: '$lentNow', label: 'выдано'),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _StatTile(value: '$borrowedNow', label: 'взято'),
+        ),
+      ],
     );
   }
 }
