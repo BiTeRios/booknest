@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/mock_data.dart';
 import '../widgets/book_card.dart';
@@ -33,6 +34,7 @@ class CommunityScreen extends StatelessWidget {
                 return BookCard(
                   book: book,
                   showOwner: true,
+                  onTap: () => context.push('/community/${book.id}'),
                   // выданную книгу сейчас запросить нельзя — кнопки нет
                   trailing: book.status == BookStatus.available
                       ? FilledButton.tonal(

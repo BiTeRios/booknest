@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/mock_data.dart';
 import '../widgets/book_card.dart';
@@ -31,14 +32,19 @@ class LibraryScreen extends StatelessWidget {
               itemCount: mockMyBooks.length,
               separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
-                return BookCard(book: mockMyBooks[index]);
+                final book = mockMyBooks[index];
+                return BookCard(
+                  book: book,
+                  // push: «зайду и вернусь» — карточка ложится поверх списка
+                  onTap: () => context.push('/books/${book.id}'),
+                );
               },
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () => context.push('/books/new'),
         icon: const Icon(Icons.add),
         label: const Text('Добавить книгу'),
       ),
