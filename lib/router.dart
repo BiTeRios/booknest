@@ -4,6 +4,7 @@ import 'screens/book_detail_screen.dart';
 import 'screens/book_form_screen.dart';
 import 'screens/community_screen.dart';
 import 'screens/library_screen.dart';
+import 'screens/loan_request_screen.dart';
 import 'screens/loans_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
@@ -59,6 +60,14 @@ final router = GoRouter(
                   builder: (_, state) => BookDetailScreen(
                     id: int.parse(state.pathParameters['id']!),
                   ),
+                  routes: [
+                    GoRoute(
+                      path: 'request', // /community/9/request
+                      builder: (_, state) => LoanRequestScreen(
+                        bookId: int.parse(state.pathParameters['id']!),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

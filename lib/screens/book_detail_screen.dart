@@ -122,7 +122,9 @@ class BookDetailScreen extends StatelessWidget {
             )
           else
             FilledButton.icon(
-              onPressed: book.status == BookStatus.available ? () {} : null,
+              onPressed: book.status == BookStatus.available
+                  ? () => context.push('/community/${book.id}/request')
+                  : null,
               icon: const Icon(Icons.bookmark_add_outlined),
               label: Text(
                 book.status == BookStatus.available

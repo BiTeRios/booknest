@@ -18,3 +18,21 @@ String? validateAuthor(String? value) {
 
 /// Жанр: нужно выбрать из списка.
 String? validateGenre(String? value) => value == null ? 'Выберите жанр' : null;
+
+/// Максимальный срок обмена: книга не должна «зависать» у заёмщика.
+const maxLoanDays = 60;
+
+/// Срок возврата: выбран, строго в будущем и не дальше [maxLoanDays] дней.
+/// [now] передаётся в тестах; в приложении — текущая дата.
+String? validateDueDate(DateTime? date, {DateTime? now}) {
+  if (date == null) return 'Выберите срок возврата';
+  final today = _dateOnly(now ?? DateTime.now());
+  final due = _dateOnly(date);
+  if (!due.isAfter(today)) return 'Срок возврата должен быть в будущем';
+  if (due.difference(today).inDays > maxLoanDays) {
+    return 'Не дольше $maxLoanDays дней';
+  }
+  return null;
+}
+
+DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);

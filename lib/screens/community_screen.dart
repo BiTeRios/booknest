@@ -38,7 +38,8 @@ class CommunityScreen extends StatelessWidget {
                   // выданную книгу сейчас запросить нельзя — кнопки нет
                   trailing: book.status == BookStatus.available
                       ? FilledButton.tonal(
-                          onPressed: () {},
+                          onPressed: () =>
+                              context.push('/community/${book.id}/request'),
                           child: const Text('Запросить'),
                         )
                       : null,
