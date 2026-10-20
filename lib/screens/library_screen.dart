@@ -41,6 +41,9 @@ class LibraryScreen extends StatelessWidget {
               hintText: 'Поиск по названию или автору',
               leading: const Icon(Icons.search),
               elevation: const WidgetStatePropertyAll(0),
+              // тап мимо поля убирает фокус — клавиатура не «возвращается» после диалогов
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               onChanged: (q) => context.read<LibraryModel>().setQuery(q),
             ),
           ),
