@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'screens/login_screen.dart';
+
 void main() => runApp(const BookNestApp());
 
 /// Корень приложения: MaterialApp и визуальная тема Material 3.
@@ -20,8 +22,8 @@ class BookNestApp extends StatelessWidget {
           titleLarge: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      // Временный стартовый экран — экраны темы появятся в следующих коммитах.
-      home: const Scaffold(body: Center(child: Text('BookNest'))),
+      // Приложение стартует со входа; на L3 вместо home: придёт go_router.
+      home: const LoginScreen(),
     );
   }
 }
