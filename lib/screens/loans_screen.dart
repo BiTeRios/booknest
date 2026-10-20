@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/loan.dart';
 import '../data/mock_data.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/loan_tile.dart';

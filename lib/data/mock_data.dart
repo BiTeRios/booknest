@@ -1,105 +1,13 @@
-// Зашитые в код данные для статического UI (L2), общие для нескольких экранов.
-// Поля моделей повторяют модель данных backend-а из ТЗ темы:
-//   Book(id, ownerId, title, author, genre, coverUrl, status)
-//   Loan(id, bookId, borrowerId, startDate, dueDate, status)
-// Имена (ownerName, borrowerName, bookTitle) нужны только для отображения.
+// Seed-данные: единственный клиент — mock-репозитории (data/mock_*_repository.dart).
+// Ни экраны, ни модели этот файл больше не импортируют; на L5 он умрёт вместе с mock.
 
-/// Статус книги: доступна для обмена или сейчас у кого-то на руках.
-enum BookStatus {
-  available('Доступна'),
-  lent('Выдана');
+import 'book.dart';
+import 'loan.dart';
 
-  const BookStatus(this.label);
-  final String label;
-}
-
-/// Статус обмена: книга ещё у заёмщика или уже возвращена.
-enum LoanStatus {
-  active('Активен'),
-  returned('Возвращён');
-
-  const LoanStatus(this.label);
-  final String label;
-}
-
-/// Пользователь приложения (на L5 приходит из POST /auth/login).
-class AppUser {
-  final int id;
-  final String name;
-  final String email;
-
-  const AppUser({required this.id, required this.name, required this.email});
-}
-
-class Book {
-  final int id;
-  final int ownerId;
-  final String ownerName;
-  final String title;
-  final String author;
-  final String genre;
-  final String? coverUrl; // обложка загружается на L5 через POST /files
-  final BookStatus status;
-
-  const Book({
-    required this.id,
-    required this.ownerId,
-    required this.ownerName,
-    required this.title,
-    required this.author,
-    required this.genre,
-    this.coverUrl,
-    this.status = BookStatus.available,
-  });
-}
-
-class Loan {
-  final int id;
-  final int bookId;
-  final String bookTitle;
-  final String bookAuthor;
-  final int ownerId;
-  final String ownerName;
-  final int borrowerId;
-  final String borrowerName;
-  final DateTime startDate;
-  final DateTime dueDate;
-  final LoanStatus status;
-
-  const Loan({
-    required this.id,
-    required this.bookId,
-    required this.bookTitle,
-    required this.bookAuthor,
-    required this.ownerId,
-    required this.ownerName,
-    required this.borrowerId,
-    required this.borrowerName,
-    required this.startDate,
-    required this.dueDate,
-    this.status = LoanStatus.active,
-  });
-
-  /// Книга ещё не возвращена, а срок уже прошёл.
-  bool get isOverdue =>
-      status == LoanStatus.active && dueDate.isBefore(DateTime.now());
-}
-
-const currentUser = AppUser(
-  id: 1,
-  name: 'Vitalii Liogchi',
-  email: 'v.liogchi@booknest.md',
-);
-
-const bookGenres = [
-  'Классика',
-  'Фантастика',
-  'Фэнтези',
-  'Антиутопия',
-  'Детектив',
-  'Нон-фикшн',
-  'IT',
-];
+/// «Текущий пользователь» mock-хранилища: им считается тот, кто вошёл.
+/// На L5 его заменит пользователь из JWT на сервере.
+const mockUserId = 1;
+const mockUserName = 'Vitalii Liogchi';
 
 /// Моя библиотека: книги текущего пользователя.
 const mockMyBooks = [

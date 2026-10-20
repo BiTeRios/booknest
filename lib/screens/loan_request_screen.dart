@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/format.dart';
+import '../data/book.dart';
 import '../data/mock_data.dart';
 import '../validators.dart';
 import '../widgets/book_card.dart';

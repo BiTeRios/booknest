@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/format.dart';
-import '../data/mock_data.dart';
+import '../data/loan.dart';
 import 'book_cover.dart';
 import 'status_chip.dart';
 

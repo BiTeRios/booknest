@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/format.dart';
+import '../data/book.dart';
+import '../data/loan.dart';
 import '../data/mock_data.dart';
 import '../widgets/book_cover.dart';
 import '../widgets/confirm_dialog.dart';
@@ -47,7 +49,7 @@ class BookDetailScreen extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
-    final isMine = book.ownerId == currentUser.id;
+    final isMine = book.ownerId == mockUserId;
     // Если книга выдана — показываем, у кого она и до какого срока.
     final activeLoan = [...mockLentLoans, ...mockBorrowedLoans]
         .where((l) => l.bookId == book.id && l.status == LoanStatus.active)
@@ -115,7 +117,7 @@ class BookDetailScreen extends StatelessWidget {
                     InfoRow(
                       icon: Icons.handshake_outlined,
                       label: 'Сейчас у',
-                      value: activeLoan.borrowerId == currentUser.id
+                      value: activeLoan.borrowerId == mockUserId
                           ? 'Вас'
                           : activeLoan.borrowerName,
                     ),

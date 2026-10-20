@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../data/mock_data.dart';
+import '../data/book.dart';
+import '../data/loan.dart';
 
 /// Смысловой тон бейджа; конкретные цвета выбирает тема.
 enum StatusTone { positive, warning, negative, neutral }

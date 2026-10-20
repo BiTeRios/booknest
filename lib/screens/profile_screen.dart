@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../data/loan.dart';
 import '../data/mock_data.dart';
 import '../models/session_model.dart';
 import '../widgets/confirm_dialog.dart';
