@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../data/format.dart';
 import '../data/book.dart';
-import '../data/mock_data.dart';
+import '../data/format.dart';
+import '../models/book_list_model.dart';
+import '../models/loans_model.dart';
 import '../validators.dart';
 import '../widgets/book_card.dart';
+import '../widgets/error_view.dart';
 
 /// Запрос книги у владельца (/community/7/request): срок возврата и сообщение.
-/// На L3 запрос только валидируется и подтверждается; запись Loan создаётся на L4.
+/// Валидный submit создаёт запись Loan через LoansModel; книга становится «выдана».
 class LoanRequestScreen extends StatefulWidget {
   final int bookId;
 
@@ -23,6 +26,9 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
   final _dueCtrl = TextEditingController(); // показывает выбранную дату
   final _messageCtrl = TextEditingController();
   DateTime? _dueDate;
+
+  /// Эфемерное состояние: запрос в полёте — кнопка гаснет.
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -46,8 +52,23 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
     _dueCtrl.text = formatDate(picked);
   }
 
-  void _submit(Book book) {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _submit(Book book) async {
+    if (!_formKey.currentState!.validate()) return; // валидация L3, нетронута
+    final community = context.read<CommunityModel>();
+
+    setState(() => _busy = true);
+    final error = await context.read<LoansModel>().request(book, _dueDate!);
+    if (!mounted) return; // экран может умереть, пока запрос летит
+    setState(() => _busy = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error))); // данные остаются в полях
+      return;
+    }
+    // хранилище уже пометило книгу выданной — список сообщества синхронизируется
+    community.markStatus(book.id, BookStatus.lent);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -60,16 +81,24 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final book = mockCommunityBooks
-        .where((b) => b.id == widget.bookId)
-        .firstOrNull;
+    final community = context.watch<CommunityModel>();
+    final book = community.byId(widget.bookId);
     if (book == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: Text('Книга не найдена')),
-      );
+      final Widget body;
+      if (community.isLoading) {
+        body = const Center(child: CircularProgressIndicator());
+      } else if (community.error case final error?) {
+        body = ErrorView(
+          message: error,
+          onRetry: () => context.read<CommunityModel>().load(),
+        );
+      } else {
+        body = const Center(child: Text('Книга не существует'));
+      }
+      return Scaffold(appBar: AppBar(), body: body);
     }
 
+    final available = book.status == BookStatus.available;
     return Scaffold(
       appBar: AppBar(title: const Text('Запрос книги')),
       body: Form(
@@ -113,14 +142,10 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: book.status == BookStatus.available
-                  ? () => _submit(book)
-                  : null,
+              onPressed: available && !_busy ? () => _submit(book) : null,
               icon: const Icon(Icons.send_outlined),
               label: Text(
-                book.status == BookStatus.available
-                    ? 'Отправить запрос'
-                    : 'Книга сейчас выдана',
+                available ? 'Отправить запрос' : 'Книга сейчас выдана',
               ),
             ),
           ],

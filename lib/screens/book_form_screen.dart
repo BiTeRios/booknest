@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../data/book.dart';
-import '../data/mock_data.dart';
+import '../models/book_list_model.dart';
 import '../validators.dart';
 
 /// Форма книги: новая (/books/new) или редактирование (/books/7/edit).
-/// На L3 форма функциональна локально: отказывает плохим данным и подтверждает
-/// хорошие, но данные никуда не сохраняются — состояние придёт на L4.
+/// Валидный submit пишет через модель (а модель — через Repository);
+/// список позади обновляется сам, через notifyListeners.
 class BookFormScreen extends StatefulWidget {
   /// null — новая книга; иначе id редактируемой книги из адреса.
   final int? bookId;
@@ -25,14 +26,23 @@ class _BookFormScreenState extends State<BookFormScreen> {
   final _authorCtrl = TextEditingController();
   String? _genre;
 
+  /// Книга, которую редактируем; null — новая книга.
+  Book? _editing;
+
+  /// Эфемерное состояние: запрос в полёте — кнопка гаснет (без двойного submit).
+  bool _busy = false;
+
   bool get _isEdit => widget.bookId != null;
 
   @override
   void initState() {
     super.initState();
-    // Режим редактирования: поля заполняются данными книги из адреса.
-    final book = mockMyBooks.where((b) => b.id == widget.bookId).firstOrNull;
-    if (book != null) {
+    // Режим редактирования: поля заполняются данными книги из модели.
+    // read (не watch): в initState нужно одно значение, а не подписка.
+    if (widget.bookId case final id?) {
+      _editing = context.read<LibraryModel>().byId(id);
+    }
+    if (_editing case final book?) {
       _titleCtrl.text = book.title;
       _authorCtrl.text = book.author;
       _genre = book.genre;
@@ -47,9 +57,31 @@ class _BookFormScreenState extends State<BookFormScreen> {
     super.dispose();
   }
 
-  void _save() {
-    if (!_formKey.currentState!.validate()) return; // ошибки уже на экране
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return; // валидация L3, нетронута
     final title = _titleCtrl.text.trim();
+    final author = _authorCtrl.text.trim();
+    final library = context.read<LibraryModel>();
+
+    setState(() => _busy = true);
+    final error = switch (_editing) {
+      final book? => await library.update(
+        book.copyWith(title: title, author: author, genre: _genre),
+      ),
+      // id 0 временный — настоящую идентичность даст хранилище (на L5 — сервер)
+      null => await library.add(
+        Book.draft(title: title, author: author, genre: _genre!),
+      ),
+    };
+    if (!mounted) return; // экран может умереть, пока запрос летит
+    setState(() => _busy = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error))); // данные остаются в полях
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -59,7 +91,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
         ),
       ),
     );
-    context.pop(); // открыто push-ем → закрывается pop-ом
+    context.pop(); // список позади УЖЕ обновился — без единого лишнего вызова
   }
 
   @override
@@ -154,7 +186,7 @@ class _BookFormScreenState extends State<BookFormScreen> {
             ),
             const SizedBox(height: 24),
             FilledButton.icon(
-              onPressed: _save,
+              onPressed: _busy ? null : _save,
               icon: const Icon(Icons.save_outlined),
               label: const Text('Сохранить'),
             ),
