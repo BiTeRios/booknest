@@ -52,18 +52,15 @@ class ProfileScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _StatTile(
-                  value: '${mockMyBooks.length}',
-                  label: 'книг в библиотеке',
-                ),
+                child: _StatTile(value: '${mockMyBooks.length}', label: 'книг'),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _StatTile(value: '$lentNow', label: 'выдано сейчас'),
+                child: _StatTile(value: '$lentNow', label: 'выдано'),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _StatTile(value: '$borrowedNow', label: 'взято сейчас'),
+                child: _StatTile(value: '$borrowedNow', label: 'взято'),
               ),
             ],
           ),
