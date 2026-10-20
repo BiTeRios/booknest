@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
-import '../data/format.dart';
 import '../data/book.dart';
-import '../data/loan.dart';
-import '../data/mock_data.dart';
+import '../data/format.dart';
+import '../models/book_list_model.dart';
+import '../models/loans_model.dart';
 import '../widgets/book_cover.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/error_view.dart';
 import '../widgets/info_row.dart';
 import '../widgets/status_chip.dart';
 
@@ -18,8 +20,7 @@ class BookDetailScreen extends StatelessWidget {
 
   const BookDetailScreen({super.key, required this.id});
 
-  /// Деструктивное действие: сначала подтверждение, затем SnackBar.
-  /// Реальное удаление из списка появится на L4 вместе с состоянием.
+  /// Деструктивное действие: подтверждение → удаление через модель → назад.
   Future<void> _delete(BuildContext context, Book book) async {
     final ok = await showConfirmDialog(
       context,
@@ -28,32 +29,53 @@ class BookDetailScreen extends StatelessWidget {
       confirmLabel: 'Удалить',
     );
     if (!ok || !context.mounted) return;
+    final error = await context.read<LibraryModel>().remove(book.id);
+    if (!context.mounted) return; // экран может умереть, пока «запрос» летит
+    if (error != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text('Книга «${book.title}» удалена')));
-    context.pop();
+    context.pop(); // объекта больше нет — его экран уходит из стека
   }
 
   @override
   Widget build(BuildContext context) {
-    // Сегодня поиск идёт в mock-данных, на L4 — через Repository, на L5 — в backend-е:
-    // адрес остаётся, источник данных меняется под низом.
-    final book = [
-      ...mockMyBooks,
-      ...mockCommunityBooks,
-    ].where((b) => b.id == id).firstOrNull;
+    // Адрес остался прежним (L3), источник поменялся под низом: теперь книгу
+    // ищем через модели, а модели — через Repository.
+    final library = context.watch<LibraryModel>();
+    final community = context.watch<CommunityModel>();
+    final loans = context.watch<LoansModel>();
+
+    final mine = library.byId(id);
+    final book = mine ?? community.byId(id);
     if (book == null) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: Text('Книга не найдена')),
-      );
+      // У null два смысла: список ещё грузится или такого id нет.
+      final Widget body;
+      if (library.isLoading || community.isLoading) {
+        body = const Center(child: CircularProgressIndicator());
+      } else if ((library.error ?? community.error) case final error?) {
+        body = ErrorView(
+          message: error,
+          onRetry: () {
+            context.read<LibraryModel>().load();
+            context.read<CommunityModel>().load();
+          },
+        );
+      } else {
+        body = const Center(child: Text('Книга не существует'));
+      }
+      return Scaffold(appBar: AppBar(), body: body);
     }
 
     final theme = Theme.of(context);
-    final isMine = book.ownerId == mockUserId;
+    final isMine = mine != null;
     // Если книга выдана — показываем, у кого она и до какого срока.
-    final activeLoan = [...mockLentLoans, ...mockBorrowedLoans]
-        .where((l) => l.bookId == book.id && l.status == LoanStatus.active)
-        .firstOrNull;
+    final activeLoan = loans.activeLoanFor(book.id);
+    final borrowedByMe =
+        activeLoan != null && loans.borrowed.any((l) => l.id == activeLoan.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -117,9 +139,7 @@ class BookDetailScreen extends StatelessWidget {
                     InfoRow(
                       icon: Icons.handshake_outlined,
                       label: 'Сейчас у',
-                      value: activeLoan.borrowerId == mockUserId
-                          ? 'Вас'
-                          : activeLoan.borrowerName,
+                      value: borrowedByMe ? 'Вас' : activeLoan.borrowerName,
                     ),
                     InfoRow(
                       icon: Icons.event_outlined,
