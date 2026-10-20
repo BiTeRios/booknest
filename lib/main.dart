@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'router.dart';
 
@@ -24,6 +25,10 @@ class BookNestApp extends StatelessWidget {
           titleLarge: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
+      // Стандартные тексты Material (календарь, подсказки кнопок) — по-русски.
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       routerConfig: router,
     );
   }
