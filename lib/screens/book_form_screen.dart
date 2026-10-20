@@ -68,6 +68,8 @@ class _BookFormScreenState extends State<BookFormScreen> {
       appBar: AppBar(title: Text(_isEdit ? 'Редактирование' : 'Новая книга')),
       body: Form(
         key: _formKey,
+        // после первого касания поле перепроверяется при каждом вводе
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

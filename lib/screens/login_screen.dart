@@ -46,6 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
                 key: _formKey,
+                // после первого касания поле перепроверяется при каждом вводе
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

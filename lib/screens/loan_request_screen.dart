@@ -73,6 +73,8 @@ class _LoanRequestScreenState extends State<LoanRequestScreen> {
       appBar: AppBar(title: const Text('Запрос книги')),
       body: Form(
         key: _formKey,
+        // после первого касания поле перепроверяется при каждом вводе
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
