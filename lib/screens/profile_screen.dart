@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/mock_data.dart';
+import '../widgets/confirm_dialog.dart';
 
 /// Профиль пользователя: данные, статистика обменов, настройки, выход.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  /// Выход — блокирующее решение, поэтому диалог с await, а не SnackBar.
+  Future<void> _logout(BuildContext context) async {
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Выйти из аккаунта?',
+      message: 'Чтобы снова увидеть свою библиотеку, нужно будет войти.',
+      confirmLabel: 'Да, выйти',
+    );
+    // После await context используется только под context.mounted.
+    if (ok && context.mounted) {
+      context.go('/login'); // go: раздел с вкладками уходит из стека
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +107,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () => _logout(context),
             style: OutlinedButton.styleFrom(foregroundColor: scheme.error),
             icon: const Icon(Icons.logout),
             label: const Text('Выйти из аккаунта'),

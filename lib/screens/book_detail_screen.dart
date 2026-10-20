@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../data/format.dart';
 import '../data/mock_data.dart';
 import '../widgets/book_cover.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/info_row.dart';
 import '../widgets/status_chip.dart';
 
@@ -14,6 +15,21 @@ class BookDetailScreen extends StatelessWidget {
   final int id;
 
   const BookDetailScreen({super.key, required this.id});
+
+  /// Деструктивное действие: сначала подтверждение, затем SnackBar.
+  /// Реальное удаление из списка появится на L4 вместе с состоянием.
+  Future<void> _delete(BuildContext context, Book book) async {
+    final ok = await showConfirmDialog(
+      context,
+      title: 'Удалить книгу?',
+      message: '«${book.title}» исчезнет из вашей библиотеки.',
+      confirmLabel: 'Удалить',
+    );
+    if (!ok || !context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Книга «${book.title}» удалена')));
+    context.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +61,7 @@ class BookDetailScreen extends StatelessWidget {
             IconButton(
               tooltip: 'Удалить',
               icon: const Icon(Icons.delete_outline),
-              onPressed: () {},
+              onPressed: () => _delete(context, book),
             ),
         ],
       ),
