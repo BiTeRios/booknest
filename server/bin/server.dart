@@ -10,6 +10,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 
 import 'package:server/auth.dart';
+import 'package:server/books.dart';
 import 'package:server/db.dart';
 import 'package:server/errors.dart';
 import 'package:server/files.dart';
@@ -33,6 +34,12 @@ Future<void> main() async {
         ..get('/notes/<id>', requireAuth(getNote))
         ..put('/notes/<id>', requireAuth(updateNote))
         ..delete('/notes/<id>', requireAuth(deleteNote))
+        // BookNest: books of the personal library and of the community.
+        ..get('/books', requireAuth(listBooks))
+        ..post('/books', requireAuth(createBook))
+        ..get('/books/<id>', requireAuth(getBook))
+        ..put('/books/<id>', requireAuth(updateBook))
+        ..delete('/books/<id>', requireAuth(deleteBook))
         ..post('/files', requireAuth(uploadFile))
         ..get('/files/<id>', downloadFile);
 
