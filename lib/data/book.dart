@@ -72,4 +72,28 @@ class Book {
     coverUrl: coverUrl ?? this.coverUrl,
     status: status ?? this.status,
   );
+
+  // --- Граница JSON (L5): язык сервера ⇄ доменная модель.
+
+  /// Тело ответа сервера → книга. Неожиданная форма тела бросает
+  /// TypeError/FormatException — хранилище переводит это в Err.
+  factory Book.fromJson(Map<String, dynamic> j) => Book(
+    id: j['id'] as int,
+    ownerId: j['ownerId'] as int,
+    ownerName: j['ownerName'] as String? ?? '',
+    title: j['title'] as String,
+    author: j['author'] as String,
+    genre: j['genre'] as String? ?? '',
+    coverUrl: j['coverUrl'] as String?,
+    status: BookStatus.values.asNameMap()[j['status']] ?? BookStatus.available,
+  );
+
+  /// Книга → тело POST/PUT. Без id, владельца и статуса: идентичность
+  /// и владельца даёт сервер, статус меняют только обмены.
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'author': author,
+    'genre': genre,
+    'coverUrl': coverUrl,
+  };
 }

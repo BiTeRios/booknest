@@ -49,9 +49,12 @@ class Loan {
       startDate = DateTime.now(),
       status = LoanStatus.active;
 
-  /// Книга ещё не возвращена, а срок уже прошёл.
-  bool get isOverdue =>
-      status == LoanStatus.active && dueDate.isBefore(DateTime.now());
+  /// Книга ещё не возвращена, а срок уже прошёл (день возврата — ещё не просрочка).
+  bool get isOverdue {
+    final now = DateTime.now();
+    return status == LoanStatus.active &&
+        dueDate.isBefore(DateTime(now.year, now.month, now.day));
+  }
 
   Loan copyWith({int? id, LoanStatus? status}) => Loan(
     id: id ?? this.id,
@@ -66,4 +69,32 @@ class Loan {
     dueDate: dueDate,
     status: status ?? this.status,
   );
+
+  // --- Граница JSON (L5).
+
+  factory Loan.fromJson(Map<String, dynamic> j) => Loan(
+    id: j['id'] as int,
+    bookId: j['bookId'] as int,
+    bookTitle: j['bookTitle'] as String,
+    bookAuthor: j['bookAuthor'] as String? ?? '',
+    ownerId: j['ownerId'] as int,
+    ownerName: j['ownerName'] as String? ?? '',
+    borrowerId: j['borrowerId'] as int,
+    borrowerName: j['borrowerName'] as String? ?? '',
+    startDate: DateTime.parse(j['startDate'] as String), // 'YYYY-MM-DD'
+    dueDate: DateTime.parse(j['dueDate'] as String),
+    status: LoanStatus.values.asNameMap()[j['status']] ?? LoanStatus.active,
+  );
+
+  /// Тело запросов: POST /loans берёт bookId и dueDate, PUT /loans/{id} —
+  /// status. Остальное (заёмщик, дата начала) заполняет сервер.
+  Map<String, dynamic> toJson() => {
+    'bookId': bookId,
+    'dueDate': _isoDate(dueDate),
+    'status': status.name,
+  };
+
+  static String _isoDate(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 }
