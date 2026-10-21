@@ -14,6 +14,9 @@ import 'models/loans_model.dart';
 import 'models/session_model.dart';
 import 'router.dart';
 
+/// SnackBar-ы корня (например, «сессия истекла») — вне контекста экранов.
+final _messenger = GlobalKey<ScaffoldMessengerState>();
+
 /// Корень композиции: ЗДЕСЬ (и только здесь) выбирается источник данных.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized(); // prefs нужны до runApp
@@ -31,7 +34,12 @@ Future<void> main() async {
   final api = ApiClient(
     apiBase,
     tokens,
-    onUnauthorized: () => router.go('/login'),
+    onUnauthorized: () {
+      router.go('/login');
+      _messenger.currentState?.showSnackBar(
+        const SnackBar(content: Text('Сессия истекла — войдите снова')),
+      );
+    },
   );
   final books = HttpBookRepository(api);
   final loans = HttpLoanRepository(api);
@@ -74,6 +82,7 @@ class BookNestApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'BookNest',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: _messenger,
       theme: ThemeData(
         // Вся палитра выводится из одного seed-цвета: тёмно-зелёный,
         // как переплёты старых книг и лампы читальных залов.
