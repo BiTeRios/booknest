@@ -14,14 +14,25 @@ class HttpBookRepository implements BookRepository {
       Book.fromJson(json as Map<String, dynamic>);
 
   @override
-  Future<Result<List<Book>>> fetchAll({BookScope scope = BookScope.mine}) =>
-      _api.send(
-        'GET',
-        '/books',
-        query: {'scope': scope.name}, // кто «я» — сервер знает по JWT
-        okStatus: 200,
-        parse: (json) => ApiClient.items(json, Book.fromJson), // конверт!
-      );
+  Future<Result<List<Book>>> fetchAll({
+    BookScope scope = BookScope.mine,
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? genre,
+  }) => _api.send(
+    'GET',
+    '/books',
+    query: {
+      'scope': scope.name, // кто «я» — сервер знает по JWT
+      'page': '$page',
+      'limit': '$limit',
+      if (search != null && search.isNotEmpty) 'search': search,
+      'genre': ?genre, // null-aware элемент: ключ попадает, только если не null
+    },
+    okStatus: 200,
+    parse: (json) => ApiClient.items(json, Book.fromJson), // конверт!
+  );
 
   @override
   Future<Result<Book>> fetchById(int id) =>

@@ -8,6 +8,7 @@ import '../widgets/book_card.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/error_view.dart';
 import '../widgets/genre_filter_bar.dart';
+import '../widgets/load_more_tail.dart';
 
 /// «Моя библиотека»: свои книги с поиском и фильтром по жанру.
 /// Данные — из LibraryModel; экран рисует три состояния: грузится / данные / ошибка.
@@ -28,7 +29,7 @@ class LibraryScreen extends StatelessWidget {
         onRetry: () => context.read<LibraryModel>().load(), // read: действие
       );
     } else {
-      body = _BookList(books: model.visibleBooks); // 3) данные
+      body = _BookList(model: model); // 3) данные
     }
 
     return Scaffold(
@@ -53,7 +54,12 @@ class LibraryScreen extends StatelessWidget {
               // тап мимо поля убирает фокус — клавиатура не «возвращается» после диалогов
               onTapOutside: (_) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
-              onChanged: (q) => context.read<LibraryModel>().setQuery(q),
+              // Поиск идёт на сервере: запрос — по Enter, очистка — сразу.
+              textInputAction: TextInputAction.search,
+              onSubmitted: (q) => context.read<LibraryModel>().search(q),
+              onChanged: (q) {
+                if (q.isEmpty) context.read<LibraryModel>().search('');
+              },
             ),
           ),
           GenreFilterBar(
@@ -74,12 +80,13 @@ class LibraryScreen extends StatelessWidget {
 }
 
 class _BookList extends StatelessWidget {
-  final List<Book> books;
+  final LibraryModel model;
 
-  const _BookList({required this.books});
+  const _BookList({required this.model});
 
   @override
   Widget build(BuildContext context) {
+    final books = model.visibleBooks;
     if (books.isEmpty) {
       return const Center(child: Text('Ничего не найдено'));
     }
@@ -87,9 +94,17 @@ class _BookList extends StatelessWidget {
     return ListView.separated(
       // снизу место под FAB, чтобы он не закрывал последнюю карточку
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-      itemCount: books.length,
+      // +1 — хвост, который догружает следующую страницу
+      itemCount: books.length + (model.hasMore ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
+        if (index == books.length) {
+          return LoadMoreTail(
+            error: model.loadMoreError,
+            onLoadMore: model.loadMore,
+            onRetry: model.retryLoadMore,
+          );
+        }
         final book = books[index];
         return Dismissible(
           // идентичность из данных, а не UniqueKey: список удаляет и вставляет

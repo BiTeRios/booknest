@@ -7,6 +7,7 @@ import '../models/book_list_model.dart';
 import '../widgets/book_card.dart';
 import '../widgets/error_view.dart';
 import '../widgets/genre_filter_bar.dart';
+import '../widgets/load_more_tail.dart';
 
 /// «Книги сообщества»: что есть у других, с кнопкой «Запросить».
 class CommunityScreen extends StatelessWidget {
@@ -30,9 +31,17 @@ class CommunityScreen extends StatelessWidget {
       final books = model.visibleBooks;
       body = ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: books.length,
+        // +1 — хвост, который догружает следующую страницу
+        itemCount: books.length + (model.hasMore ? 1 : 0),
         separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
+          if (index == books.length) {
+            return LoadMoreTail(
+              error: model.loadMoreError,
+              onLoadMore: model.loadMore,
+              onRetry: model.retryLoadMore,
+            );
+          }
           final book = books[index];
           return BookCard(
             key: ValueKey(book.id),
@@ -74,7 +83,12 @@ class CommunityScreen extends StatelessWidget {
               // тап мимо поля убирает фокус — клавиатура не «возвращается» после диалогов
               onTapOutside: (_) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
-              onChanged: (q) => context.read<CommunityModel>().setQuery(q),
+              // Поиск идёт на сервере: запрос — по Enter, очистка — сразу.
+              textInputAction: TextInputAction.search,
+              onSubmitted: (q) => context.read<CommunityModel>().search(q),
+              onChanged: (q) {
+                if (q.isEmpty) context.read<CommunityModel>().search('');
+              },
             ),
           ),
           GenreFilterBar(

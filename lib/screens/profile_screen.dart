@@ -149,7 +149,11 @@ class _Stats extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _StatTile(value: '${library.books.length}', label: 'книг'),
+          child: _StatTile(
+            // со страницами сервера: «10+» — загружено 10, есть ещё
+            value: '${library.books.length}${library.hasMore ? '+' : ''}',
+            label: 'книг',
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(

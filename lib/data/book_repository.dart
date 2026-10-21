@@ -13,7 +13,15 @@ enum BookScope { mine, community }
 ///   update    → PUT    /books/{id}
 ///   delete    → DELETE /books/{id}      (204, пустое тело → `Result<void>`)
 abstract class BookRepository {
-  Future<Result<List<Book>>> fetchAll({BookScope scope = BookScope.mine});
+  /// L5: интерфейс вырос совместимо — пагинация и поиск на сервере через
+  /// опциональные именованные параметры; старый вызов fetchAll() не сломан.
+  Future<Result<List<Book>>> fetchAll({
+    BookScope scope = BookScope.mine,
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? genre,
+  });
   Future<Result<Book>> fetchById(int id);
   Future<Result<Book>> create(Book book);
   Future<Result<Book>> update(Book book);

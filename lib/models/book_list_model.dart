@@ -13,45 +13,51 @@ abstract class BookListModel extends ChangeNotifier {
   final BookRepository _repository;
   final BookScope scope;
 
+  /// Размер ломтя: телефон получает с сервера только свою страницу.
+  static const pageSize = 10;
+
   bool _loading = false;
   String? _error;
   List<Book> _books = const [];
   String _query = '';
   String? _genre;
 
+  // Пагинация (L5): сколько страниц уже приклеено и есть ли ещё.
+  int _page = 1;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  String? _loadMoreError;
+
   bool get isLoading => _loading;
   String? get error => _error;
   String get query => _query;
   String? get genre => _genre;
+  bool get hasMore => _hasMore;
+  String? get loadMoreError => _loadMoreError;
 
   /// Все загруженные книги — только для чтения: мутация идёт через методы,
   /// которые извещают подписчиков.
   List<Book> get books => List.unmodifiable(_books);
 
-  /// Книги после поиска и фильтра по жанру — то, что видит экран.
-  List<Book> get visibleBooks {
-    final q = _query.trim().toLowerCase();
-    return List.unmodifiable(
-      _books.where(
-        (b) =>
-            (_genre == null || b.genre == _genre) &&
-            (q.isEmpty ||
-                b.title.toLowerCase().contains(q) ||
-                b.author.toLowerCase().contains(q)),
-      ),
-    );
-  }
+  /// То, что видит экран. Поиск и жанр с L5 фильтрует сервер, поэтому это
+  /// просто загруженные страницы.
+  List<Book> get visibleBooks => books;
 
   /// Ищет в загруженном списке; null — если такой книги нет.
   Book? byId(int id) => _books.where((b) => b.id == id).firstOrNull;
 
+  /// Первая страница с текущими фильтрами; retry сохраняет фильтр.
   Future<void> load() async {
     _loading = true;
     _error = null;
+    _loadMoreError = null;
+    _page = 1;
     notifyListeners(); // подписанные экраны входят в состояние «грузится»
-    switch (await _repository.fetchAll(scope: scope)) {
+    switch (await _fetchPage(1)) {
       case Ok(:final value):
         _books = value;
+        _hasMore =
+            value.length == pageSize; // полная страница → видимо, есть ещё
       case Err(:final msg):
         _error = msg;
     }
@@ -59,14 +65,47 @@ abstract class BookListModel extends ChangeNotifier {
     notifyListeners(); // …и выходят: с данными или с ошибкой — никогда молча
   }
 
-  void setQuery(String query) {
-    _query = query;
+  /// Следующая страница приклеивается к списку. Зовётся из itemBuilder-а,
+  /// то есть в разгар build: поэтому флаг ставится БЕЗ notifyListeners()
+  /// (иначе «setState() called during build»), а guard не даёт двойных страниц.
+  Future<void> loadMore() async {
+    if (_loadingMore || _loading || !_hasMore || _loadMoreError != null) return;
+    _loadingMore = true;
+    switch (await _fetchPage(_page + 1)) {
+      case Ok(:final value):
+        _page += 1;
+        _books = [..._books, ...value];
+        _hasMore = value.length == pageSize;
+      case Err(:final msg):
+        _loadMoreError = msg; // хвост списка покажет ошибку и «Повторить»
+    }
+    _loadingMore = false;
     notifyListeners();
   }
 
-  void setGenre(String? genre) {
-    _genre = genre;
+  /// «Повторить» в хвосте списка после неудачной догрузки.
+  void retryLoadMore() {
+    _loadMoreError = null;
     notifyListeners();
+  }
+
+  Future<Result<List<Book>>> _fetchPage(int page) => _repository.fetchAll(
+    scope: scope,
+    page: page,
+    limit: pageSize,
+    search: _query,
+    genre: _genre,
+  );
+
+  /// Поиск идёт на сервере: новый запрос с первой страницы.
+  Future<void> search(String query) {
+    _query = query.trim();
+    return load();
+  }
+
+  Future<void> setGenre(String? genre) {
+    _genre = genre;
+    return load();
   }
 
   // Мутации: вердикт хранилища → изменение → извещение.
@@ -75,7 +114,8 @@ abstract class BookListModel extends ChangeNotifier {
   Future<String?> add(Book draft) async {
     switch (await _repository.create(draft)) {
       case Ok(:final value):
-        _books = [..._books, value]; // с id, полученным от хранилища
+        // с id, полученным от хранилища; сервер отдаёт новые первыми
+        _books = [value, ..._books];
         notifyListeners();
         return null;
       case Err(:final msg):

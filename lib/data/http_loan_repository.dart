@@ -17,7 +17,8 @@ class HttpLoanRepository implements LoanRepository {
   Future<Result<List<Loan>>> fetchAll({required LoanRole role}) => _api.send(
     'GET',
     '/loans',
-    query: {'role': role.name},
+    // Обмены экран показывает целиком, без ломтей: просим максимум сервера.
+    query: {'role': role.name, 'limit': '100'},
     okStatus: 200,
     parse: (json) => ApiClient.items(json, Loan.fromJson),
   );
