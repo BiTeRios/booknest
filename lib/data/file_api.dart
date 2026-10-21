@@ -12,11 +12,13 @@ import 'token_store.dart';
 /// Сервер отвечает 201 с ОТНОСИТЕЛЬНЫМ url вида «/files/7»; его и хранит книга,
 /// а показ — Image.network('$apiBase$url').
 class FileApi {
-  FileApi(this.baseUrl, this.tokens, {this.onUnauthorized});
+  FileApi(this.baseUrl, this.tokens, {this.onUnauthorized, http.Client? client})
+    : _client = client ?? http.Client();
 
   final String baseUrl;
   final TokenStore tokens;
   final void Function()? onUnauthorized;
+  final http.Client _client; // в тестах — MockClient
 
   /// Файл передаётся дольше JSON — таймаут щедрее.
   static const _timeout = Duration(seconds: 20);
@@ -28,7 +30,7 @@ class FileApi {
         ..files.add(await http.MultipartFile.fromPath('file', path));
       // timeout на send(): иначе сервер, замёрзший ВО ВРЕМЯ передачи, не истечёт
       final res = await http.Response.fromStream(
-        await req.send().timeout(_timeout),
+        await _client.send(req).timeout(_timeout),
       );
       if (res.statusCode == 401) {
         await tokens.clear();
