@@ -4,6 +4,12 @@
 
 Запуск: `dart pub get`, затем `dart run bin/server.dart` (порт 8080, переменные `PORT`, `JWT_SECRET`).
 
+Демо-данные (5 пользователей, 32 книги, 12 обменов; пароль у всех `parola123`): `dart run tool/seed.dart`. Вход в приложение: `vitalii@booknest.md`.
+
+Проверка контракта (сервер запущен): `dart run tool/smoke.dart --base-url http://localhost:8080` — 50 проверок шаблона и маршрутов BookNest.
+
+Маршруты темы: `GET/POST /books`, `GET/PUT/DELETE /books/{id}` (`?scope=mine|community&page&limit&search&genre`); `GET/POST /loans`, `GET/PUT/DELETE /loans/{id}` (`?role=lent|borrowed`).
+
 **Windows:** пакету `sqlite3` нужен `sqlite3.dll` рядом с сервером. Его можно взять с sqlite.org (Precompiled Binaries for Windows, x64) или из установленного Python (`Python3xx\DLLs\sqlite3.dll`). Файл в git не хранится.
 
 ---
