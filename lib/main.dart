@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'data/api_config.dart';
+import 'data/auth_api.dart';
 import 'data/mock_book_repository.dart';
 import 'data/mock_loan_repository.dart';
+import 'data/token_store.dart';
 import 'models/book_list_model.dart';
 import 'models/loans_model.dart';
 import 'models/session_model.dart';
 import 'router.dart';
 
 /// Корень композиции: ЗДЕСЬ (и только здесь) выбирается источник данных.
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // prefs нужны до runApp
+  final tokens = TokenStore();
+  final loggedIn = await tokens.read() != null; // запуск решает по token-у
+  final user = loggedIn ? await tokens.readUser() : null;
+
+  router = GoRouter(
+    initialLocation: loggedIn ? '/books' : '/login',
+    routes: appRoutes, // карта L3 — без изменений
+  );
+
   final books = MockBookRepository(); // на L5: HTTP-вариант — и всё
   final loans = MockLoanRepository(books);
 
@@ -18,13 +32,24 @@ void main() {
     // Модели монтируются НАД router-ом, чтобы их видели все экраны.
     MultiProvider(
       providers: [
+        // Вход и регистрация на сервере; token — в shared_preferences.
+        Provider<AuthApi>(create: (_) => AuthApi(apiBase, tokens)),
         // Леса демонстрации аварии (переключатель в профиле) — исчезнут на L5.
         // Repository не ChangeNotifier и живёт всё приложение — .value оправдан.
         Provider<MockBookRepository>.value(value: books),
         Provider<MockLoanRepository>.value(value: loans),
         // Модели — фабрикой: Provider создаёт их лениво и сам вызовет dispose.
         // DI: хранилище — в конструктор; каскад ..load() — первая загрузка.
-        ChangeNotifierProvider(create: (_) => SessionModel()),
+        // Сессия после перезапуска восстанавливается из prefs.
+        ChangeNotifierProvider(
+          create: (_) {
+            final session = SessionModel();
+            if (user != null) {
+              session.signIn(email: user.email, name: user.name);
+            }
+            return session;
+          },
+        ),
         ChangeNotifierProvider(create: (_) => LibraryModel(books)..load()),
         ChangeNotifierProvider(create: (_) => CommunityModel(books)..load()),
         ChangeNotifierProvider(create: (_) => LoansModel(loans)..load()),

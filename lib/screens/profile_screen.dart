@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../data/auth_api.dart';
 import '../data/loan.dart';
 import '../data/mock_book_repository.dart';
 import '../data/mock_loan_repository.dart';
@@ -41,10 +42,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       confirmLabel: 'Да, выйти',
     );
     // После await context используется только под context.mounted.
-    if (ok && context.mounted) {
-      context.read<SessionModel>().signOut(); // read: действие в callback-е
-      context.go('/login'); // go: раздел с вкладками уходит из стека
-    }
+    if (!ok || !context.mounted) return;
+    await context.read<AuthApi>().logout(); // token выбрасывается из prefs
+    if (!context.mounted) return;
+    context.read<SessionModel>().signOut(); // read: действие в callback-е
+    context.go('/login'); // go: раздел с вкладками уходит из стека
   }
 
   @override

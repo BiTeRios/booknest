@@ -23,6 +23,14 @@ String? validatePassword(String? value) {
   return null;
 }
 
+/// Имя при регистрации: обязательно (без него сервер ответит 400).
+String? validateName(String? value) {
+  final name = value?.trim() ?? '';
+  if (name.isEmpty) return 'Введите имя';
+  if (name.length < 2) return 'Имя слишком короткое';
+  return null;
+}
+
 /// Название книги: обязательно (по ТЗ темы).
 String? validateBookTitle(String? value) =>
     (value == null || value.trim().isEmpty) ? 'Введите название книги' : null;
