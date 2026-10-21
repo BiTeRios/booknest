@@ -92,7 +92,13 @@ class BookDetailScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Center(child: BookCover(title: book.title, width: 120)),
+          Center(
+            child: BookCover(
+              title: book.title,
+              coverUrl: book.coverUrl,
+              width: 120,
+            ),
+          ),
           const SizedBox(height: 16),
           Text(
             book.title,

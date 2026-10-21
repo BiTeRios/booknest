@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../data/book.dart';
+import '../data/file_api.dart';
+import '../data/result.dart';
 import '../models/book_list_model.dart';
 import '../validators.dart';
+import '../widgets/book_cover.dart';
 
 /// Форма книги: новая (/books/new) или редактирование (/books/7/edit).
 /// Валидный submit пишет через модель (а модель — через Repository);
@@ -32,6 +36,10 @@ class _BookFormScreenState extends State<BookFormScreen> {
   /// Эфемерное состояние: запрос в полёте — кнопка гаснет (без двойного submit).
   bool _busy = false;
 
+  /// Обложка: url на сервере («/files/7») и идёт ли загрузка — тоже эфемерное.
+  String? _coverUrl;
+  bool _uploading = false;
+
   bool get _isEdit => widget.bookId != null;
 
   @override
@@ -46,6 +54,31 @@ class _BookFormScreenState extends State<BookFormScreen> {
       _titleCtrl.text = book.title;
       _authorCtrl.text = book.author;
       _genre = book.genre;
+      _coverUrl = book.coverUrl;
+    }
+  }
+
+  /// Фото из галереи → POST /files → url запоминается и уйдёт с книгой.
+  Future<void> _pickCover() async {
+    final files = context.read<FileApi>();
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800, // обложке хватает; заодно файл заведомо меньше 5 МБ
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return; // пользователь передумал
+
+    setState(() => _uploading = true);
+    final result = await files.upload(picked.path);
+    if (!mounted) return;
+    setState(() => _uploading = false);
+
+    switch (result) {
+      case Ok(:final value):
+        setState(() => _coverUrl = value);
+      case Err(:final msg):
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(msg)));
     }
   }
 
@@ -66,11 +99,21 @@ class _BookFormScreenState extends State<BookFormScreen> {
     setState(() => _busy = true);
     final error = switch (_editing) {
       final book? => await library.update(
-        book.copyWith(title: title, author: author, genre: _genre),
+        book.copyWith(
+          title: title,
+          author: author,
+          genre: _genre,
+          coverUrl: _coverUrl,
+        ),
       ),
       // id 0 временный — настоящую идентичность даст хранилище (на L5 — сервер)
       null => await library.add(
-        Book.draft(title: title, author: author, genre: _genre!),
+        Book.draft(
+          title: title,
+          author: author,
+          genre: _genre!,
+          coverUrl: _coverUrl,
+        ),
       ),
     };
     if (!mounted) return; // экран может умереть, пока запрос летит
@@ -107,32 +150,45 @@ class _BookFormScreenState extends State<BookFormScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Center(
-              child: Container(
-                width: 96,
-                height: 144,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.add_photo_alternate_outlined,
-                  size: 40,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
+              child: _uploading
+                  ? Container(
+                      width: 96,
+                      height: 144,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const CircularProgressIndicator(),
+                    )
+                  : _coverUrl != null
+                  ? BookCover(
+                      title: _titleCtrl.text,
+                      coverUrl: _coverUrl,
+                      width: 96,
+                    )
+                  : Container(
+                      width: 96,
+                      height: 144,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.add_photo_alternate_outlined,
+                        size: 40,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
             ),
             const SizedBox(height: 8),
             Center(
               child: OutlinedButton.icon(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Загрузка обложки станет доступна после подключения сервера',
-                    ),
-                  ),
-                ),
+                onPressed: _uploading || _busy ? null : _pickCover,
                 icon: const Icon(Icons.upload_outlined),
-                label: const Text('Загрузить обложку'),
+                label: Text(
+                  _coverUrl == null ? 'Загрузить обложку' : 'Заменить обложку',
+                ),
               ),
             ),
             const SizedBox(height: 24),

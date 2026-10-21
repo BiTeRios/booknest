@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'data/api_client.dart';
 import 'data/api_config.dart';
 import 'data/auth_api.dart';
+import 'data/file_api.dart';
 import 'data/http_book_repository.dart';
 import 'data/http_loan_repository.dart';
 import 'data/token_store.dart';
@@ -43,6 +44,8 @@ Future<void> main() async {
   );
   final books = HttpBookRepository(api);
   final loans = HttpLoanRepository(api);
+  // Обложки — multipart на POST /files; 401 обрабатывается так же.
+  final files = FileApi(apiBase, tokens, onUnauthorized: api.onUnauthorized);
 
   runApp(
     // Модели монтируются НАД router-ом, чтобы их видели все экраны.
@@ -50,6 +53,7 @@ Future<void> main() async {
       providers: [
         // Вход и регистрация на сервере; token — в shared_preferences.
         Provider<AuthApi>(create: (_) => AuthApi(apiBase, tokens)),
+        Provider<FileApi>.value(value: files),
         // Модели — фабрикой: Provider создаёт их лениво и сам вызовет dispose.
         // DI: хранилище — в конструктор; каскад ..load() — первая загрузка.
         // Сессия после перезапуска восстанавливается из prefs.

@@ -36,7 +36,7 @@ class BookCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              BookCover(title: book.title),
+              BookCover(title: book.title, coverUrl: book.coverUrl),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
