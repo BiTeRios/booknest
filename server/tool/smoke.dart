@@ -69,8 +69,11 @@ Future<(String, int)> newUser(String tag) async {
   return (body['token'] as String, (body['user'] as Map)['id'] as int);
 }
 
+/// Calendar date [days] ahead of today (day overflow is normalised by
+/// DateTime; adding Duration(days: n) would drift across a DST switch).
 String dateIn(int days) {
-  final d = DateTime.now().add(Duration(days: days));
+  final now = DateTime.now();
+  final d = DateTime(now.year, now.month, now.day + days);
   return '${d.year}-${'${d.month}'.padLeft(2, '0')}-${'${d.day}'.padLeft(2, '0')}';
 }
 

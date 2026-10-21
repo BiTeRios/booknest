@@ -56,9 +56,11 @@ Row? _find(int userId, String? idParam) {
 }
 
 /// Today as a calendar date (time of day dropped).
+/// Calendar dates are kept in UTC: a UTC day is always 24 h, so the day
+/// count does not lose an hour across a daylight-saving switch.
 DateTime _today() {
   final now = DateTime.now();
-  return DateTime(now.year, now.month, now.day);
+  return DateTime.utc(now.year, now.month, now.day);
 }
 
 /// GET /loans?role=lent|borrowed&page=1&limit=20 -> {items, page, limit, total}
@@ -111,7 +113,7 @@ Future<Response> createLoan(Request request) async {
   if (due == null) {
     return validationError('dueDate is required, format YYYY-MM-DD');
   }
-  final dueDate = DateTime(due.year, due.month, due.day);
+  final dueDate = DateTime.utc(due.year, due.month, due.day);
   final today = _today();
   if (!dueDate.isAfter(today)) {
     return validationError('dueDate must be in the future');

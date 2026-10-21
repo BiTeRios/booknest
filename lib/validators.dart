@@ -65,4 +65,6 @@ String? validateDueDate(DateTime? date, {DateTime? now}) {
   return null;
 }
 
-DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+/// Календарная дата в UTC: в UTC сутки всегда 24 ч, поэтому разница дат
+/// не «теряет» час на переводе часов (L6: баг нашёл тест).
+DateTime _dateOnly(DateTime d) => DateTime.utc(d.year, d.month, d.day);
