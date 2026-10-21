@@ -1,0 +1,10 @@
+# Dart tooling
+.dart_tool/
+
+# Runtime data (created automatically on first start)
+app.db
+app.db-*
+uploads/
+
+# Windows: SQLite берётся из sqlite3.dll рядом с сервером (см. README)
+sqlite3.dll
