@@ -14,6 +14,7 @@ import 'package:server/books.dart';
 import 'package:server/db.dart';
 import 'package:server/errors.dart';
 import 'package:server/files.dart';
+import 'package:server/loans.dart';
 import 'package:server/notes.dart';
 
 Future<void> main() async {
@@ -40,6 +41,12 @@ Future<void> main() async {
         ..get('/books/<id>', requireAuth(getBook))
         ..put('/books/<id>', requireAuth(updateBook))
         ..delete('/books/<id>', requireAuth(deleteBook))
+        // BookNest: loans — who borrowed which book and until when.
+        ..get('/loans', requireAuth(listLoans))
+        ..post('/loans', requireAuth(createLoan))
+        ..get('/loans/<id>', requireAuth(getLoan))
+        ..put('/loans/<id>', requireAuth(updateLoan))
+        ..delete('/loans/<id>', requireAuth(deleteLoan))
         ..post('/files', requireAuth(uploadFile))
         ..get('/files/<id>', downloadFile);
 
