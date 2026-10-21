@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 
 import '../data/auth_api.dart';
 import '../data/loan.dart';
-import '../data/mock_book_repository.dart';
-import '../data/mock_loan_repository.dart';
 import '../models/book_list_model.dart';
 import '../models/loans_model.dart';
 import '../models/session_model.dart';
@@ -13,25 +11,10 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/error_view.dart';
 
 /// Профиль пользователя: данные, статистика обменов, настройки, выход.
-class ProfileScreen extends StatefulWidget {
+/// Переключатель аварии L4 удалён вместе с mock-ом: ошибку теперь честно
+/// провоцирует остановка сервера.
+class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  /// Эфемерное состояние → setState: положение переключателя знает только экран.
-  late bool _simulateError = context.read<MockBookRepository>().simulateError;
-
-  /// Леса демонстрации аварии — ЕДИНСТВЕННОЕ место UI, знающее о mock-е.
-  /// Умрут на L5 вместе с mock-ом: тогда ошибку честнее провоцировать
-  /// остановкой сервера.
-  void _toggleSimulatedError(bool value) {
-    setState(() => _simulateError = value);
-    context.read<MockBookRepository>().simulateError = value;
-    context.read<MockLoanRepository>().simulateError = value;
-  }
 
   /// Выход — блокирующее решение, поэтому диалог с await, а не SnackBar.
   Future<void> _logout(BuildContext context) async {
@@ -104,14 +87,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onChanged: (_) {},
                   secondary: const Icon(Icons.notifications_outlined),
                   title: const Text('Напоминать о сроке возврата'),
-                ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  value: _simulateError,
-                  onChanged: _toggleSimulatedError,
-                  secondary: const Icon(Icons.wifi_off_outlined),
-                  title: const Text('Симулировать сбой сети'),
-                  subtitle: const Text('Для демонстрации экрана ошибки'),
                 ),
                 const Divider(height: 1),
                 const ListTile(

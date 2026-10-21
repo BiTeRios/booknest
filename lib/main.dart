@@ -3,10 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'data/api_client.dart';
 import 'data/api_config.dart';
 import 'data/auth_api.dart';
-import 'data/mock_book_repository.dart';
-import 'data/mock_loan_repository.dart';
+import 'data/http_book_repository.dart';
+import 'data/http_loan_repository.dart';
 import 'data/token_store.dart';
 import 'models/book_list_model.dart';
 import 'models/loans_model.dart';
@@ -25,8 +26,15 @@ Future<void> main() async {
     routes: appRoutes, // карта L3 — без изменений
   );
 
-  final books = MockBookRepository(); // на L5: HTTP-вариант — и всё
-  final loans = MockLoanRepository(books);
+  // Источник данных — backend. 401 в любом запросе: token уже стёрт,
+  // корень уводит на вход (в одном месте; хранилища не знают о router-е).
+  final api = ApiClient(
+    apiBase,
+    tokens,
+    onUnauthorized: () => router.go('/login'),
+  );
+  final books = HttpBookRepository(api);
+  final loans = HttpLoanRepository(api);
 
   runApp(
     // Модели монтируются НАД router-ом, чтобы их видели все экраны.
@@ -34,10 +42,6 @@ Future<void> main() async {
       providers: [
         // Вход и регистрация на сервере; token — в shared_preferences.
         Provider<AuthApi>(create: (_) => AuthApi(apiBase, tokens)),
-        // Леса демонстрации аварии (переключатель в профиле) — исчезнут на L5.
-        // Repository не ChangeNotifier и живёт всё приложение — .value оправдан.
-        Provider<MockBookRepository>.value(value: books),
-        Provider<MockLoanRepository>.value(value: loans),
         // Модели — фабрикой: Provider создаёт их лениво и сам вызовет dispose.
         // DI: хранилище — в конструктор; каскад ..load() — первая загрузка.
         // Сессия после перезапуска восстанавливается из prefs.
