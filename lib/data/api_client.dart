@@ -16,10 +16,18 @@ import 'token_store.dart';
 ///   3) тело-сюрприз (не JSON, не та форма) — FormatException/TypeError.
 /// Все ветки стекаются в Err(msg): модели и экраны знают только Result.
 class ApiClient {
-  ApiClient(this.baseUrl, this.tokens, {this.onUnauthorized});
+  ApiClient(
+    this.baseUrl,
+    this.tokens, {
+    this.onUnauthorized,
+    http.Client? client,
+  }) : _client = client ?? http.Client();
 
   final String baseUrl;
   final TokenStore tokens;
+
+  /// Клиент внедряется: в тестах (L6) вместо сети — MockClient.
+  final http.Client _client;
 
   /// Что делать, когда сервер сказал 401, решает корень композиции (main):
   /// хранилище не импортирует router.
@@ -54,10 +62,10 @@ class ApiClient {
       final headers = await _headers();
       final encoded = body == null ? null : jsonEncode(body);
       final res = await switch (method) {
-        'GET' => http.get(uri, headers: headers),
-        'POST' => http.post(uri, headers: headers, body: encoded),
-        'PUT' => http.put(uri, headers: headers, body: encoded),
-        'DELETE' => http.delete(uri, headers: headers),
+        'GET' => _client.get(uri, headers: headers),
+        'POST' => _client.post(uri, headers: headers, body: encoded),
+        'PUT' => _client.put(uri, headers: headers, body: encoded),
+        'DELETE' => _client.delete(uri, headers: headers),
         _ => throw ArgumentError.value(method, 'method'),
       }.timeout(_timeout); // timeout на КАЖДЫЙ запрос: иначе вечный spinner
 
@@ -66,11 +74,12 @@ class ApiClient {
       // 204 — пустое тело: jsonDecode('') бросил бы FormatException.
       return Ok(parse(res.statusCode == 204 ? null : jsonDecode(res.body)));
     } on SocketException {
-      return const Err('Нет сети — повторите попытку'); // слой 1
+      // слой 1: до сервера не дошли — isNetwork позволит показать кэш (L6)
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on http.ClientException {
-      return const Err('Нет сети — повторите попытку');
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on TimeoutException {
-      return const Err('Сервер не отвечает');
+      return const Err('Сервер не отвечает', isNetwork: true);
     } on FormatException {
       return const Err('Ответ не тот, что обещан'); // слой 3
     } on TypeError {

@@ -11,6 +11,10 @@ class Ok<T> extends Result<T> {
 }
 
 class Err<T> extends Result<T> {
-  const Err(this.msg);
+  const Err(this.msg, {this.isNetwork = false});
   final String msg;
+
+  /// true — не дошли до сервера (нет сети, таймаут). Такой отказ (L6) можно
+  /// пережить, показав сохранённые данные; ответ сервера с ошибкой — нельзя.
+  final bool isNetwork;
 }

@@ -39,11 +39,11 @@ class FileApi {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       return Ok(data['url'] as String);
     } on SocketException {
-      return const Err('Нет сети — повторите попытку');
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on http.ClientException {
-      return const Err('Нет сети — повторите попытку');
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on TimeoutException {
-      return const Err('Сервер не отвечает');
+      return const Err('Сервер не отвечает', isNetwork: true);
     } on FormatException {
       return const Err('Ответ не тот, что обещан');
     } on TypeError {

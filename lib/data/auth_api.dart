@@ -11,10 +11,12 @@ import 'token_store.dart';
 
 /// Вход и регистрация по контракту backend-а; token уходит в TokenStore.
 class AuthApi {
-  AuthApi(this.baseUrl, this.tokens);
+  AuthApi(this.baseUrl, this.tokens, {http.Client? client})
+    : _client = client ?? http.Client();
 
   final String baseUrl;
   final TokenStore tokens;
+  final http.Client _client; // в тестах — MockClient
 
   static const _timeout = Duration(seconds: 8);
 
@@ -36,7 +38,7 @@ class AuthApi {
   /// register и login разнятся лишь путём и телом — один _post на оба.
   Future<Result<AppUser>> _post(String path, Map<String, Object?> body) async {
     try {
-      final res = await http
+      final res = await _client
           .post(
             Uri.parse('$baseUrl$path'),
             headers: {'Content-Type': 'application/json'},
@@ -51,11 +53,11 @@ class AuthApi {
       await tokens.save(data['token'] as String, user); // login → setString
       return Ok(user);
     } on SocketException {
-      return const Err('Нет сети — повторите попытку'); // слой 1: дорога
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on TimeoutException {
-      return const Err('Сервер не отвечает');
+      return const Err('Сервер не отвечает', isNetwork: true);
     } on http.ClientException {
-      return const Err('Нет сети — повторите попытку');
+      return const Err('Нет сети — повторите попытку', isNetwork: true);
     } on FormatException {
       return const Err('Ответ не тот, что обещан'); // слой 3: тело-сюрприз
     } on TypeError {
