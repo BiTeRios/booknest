@@ -6,12 +6,16 @@ import 'package:provider/provider.dart';
 import 'data/api_client.dart';
 import 'data/api_config.dart';
 import 'data/auth_api.dart';
+import 'data/cached_book_repository.dart';
+import 'data/cached_loan_repository.dart';
 import 'data/file_api.dart';
 import 'data/http_book_repository.dart';
 import 'data/http_loan_repository.dart';
+import 'data/offline_cache.dart';
 import 'data/token_store.dart';
 import 'models/book_list_model.dart';
 import 'models/loans_model.dart';
+import 'models/offline_status.dart';
 import 'models/session_model.dart';
 import 'router.dart';
 
@@ -30,20 +34,38 @@ Future<void> main() async {
     routes: appRoutes, // карта L3 — без изменений
   );
 
+  // L6: offline-кэш списков и состояние «показаны сохранённые данные».
+  // OfflineStatus создан здесь, а не фабрикой Provider-а: о его изменениях
+  // сообщают хранилища, которые строятся до runApp.
+  final cache = OfflineCache();
+  final offline = OfflineStatus();
+
   // Источник данных — backend. 401 в любом запросе: token уже стёрт,
   // корень уводит на вход (в одном месте; хранилища не знают о router-е).
   final api = ApiClient(
     apiBase,
     tokens,
     onUnauthorized: () {
+      cache.clear(); // мёртвая сессия — кэш её данных тоже не нужен
+      offline.report(null);
       router.go('/login');
       _messenger.currentState?.showSnackBar(
         const SnackBar(content: Text('Сессия истекла — войдите снова')),
       );
     },
   );
-  final books = HttpBookRepository(api);
-  final loans = HttpLoanRepository(api);
+  // Декораторы L6 оборачивают HTTP-хранилища: модели и экраны их не замечают —
+  // тот же интерфейс, источник выбирается здесь же, в корне.
+  final books = CachedBookRepository(
+    HttpBookRepository(api),
+    cache,
+    onSource: offline.report,
+  );
+  final loans = CachedLoanRepository(
+    HttpLoanRepository(api),
+    cache,
+    onSource: offline.report,
+  );
   // Обложки — multipart на POST /files; 401 обрабатывается так же.
   final files = FileApi(apiBase, tokens, onUnauthorized: api.onUnauthorized);
 
@@ -52,8 +74,11 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         // Вход и регистрация на сервере; token — в shared_preferences.
-        Provider<AuthApi>(create: (_) => AuthApi(apiBase, tokens)),
+        Provider<AuthApi>(
+          create: (_) => AuthApi(apiBase, tokens, cache: cache),
+        ),
         Provider<FileApi>.value(value: files),
+        ChangeNotifierProvider<OfflineStatus>.value(value: offline),
         // Модели — фабрикой: Provider создаёт их лениво и сам вызовет dispose.
         // DI: хранилище — в конструктор; каскад ..load() — первая загрузка.
         // Сессия после перезапуска восстанавливается из prefs.

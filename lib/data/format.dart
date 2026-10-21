@@ -2,4 +2,8 @@
 String formatDate(DateTime date) =>
     '${_twoDigits(date.day)}.${_twoDigits(date.month)}.${date.year}';
 
+/// Время в формате 09:05.
+String formatTime(DateTime date) =>
+    '${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+
 String _twoDigits(int n) => n.toString().padLeft(2, '0');

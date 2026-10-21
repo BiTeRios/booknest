@@ -96,4 +96,13 @@ class Book {
     'genre': genre,
     'coverUrl': coverUrl,
   };
+
+  /// Полный снимок для offline-кэша (L6): все поля, которые читает fromJson.
+  Map<String, dynamic> toStorageJson() => {
+    'id': id,
+    'ownerId': ownerId,
+    'ownerName': ownerName,
+    ...toJson(),
+    'status': status.name,
+  };
 }

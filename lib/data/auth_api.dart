@@ -6,16 +6,20 @@ import 'package:http/http.dart' as http;
 
 import 'api_message.dart';
 import 'app_user.dart';
+import 'offline_cache.dart';
 import 'result.dart';
 import 'token_store.dart';
 
 /// Вход и регистрация по контракту backend-а; token уходит в TokenStore.
 class AuthApi {
-  AuthApi(this.baseUrl, this.tokens, {http.Client? client})
+  AuthApi(this.baseUrl, this.tokens, {this.cache, http.Client? client})
     : _client = client ?? http.Client();
 
   final String baseUrl;
   final TokenStore tokens;
+
+  /// Offline-кэш (L6): при выходе стирается вместе с токеном.
+  final OfflineCache? cache;
   final http.Client _client; // в тестах — MockClient
 
   static const _timeout = Duration(seconds: 8);
@@ -33,7 +37,11 @@ class AuthApi {
   Future<Result<AppUser>> login(String email, String password) =>
       _post('/auth/login', {'email': email, 'password': password});
 
-  Future<void> logout() => tokens.clear();
+  /// Выход: стираются пропуск и сохранённые данные этого пользователя.
+  Future<void> logout() async {
+    await tokens.clear();
+    await cache?.clear();
+  }
 
   /// register и login разнятся лишь путём и телом — один _post на оба.
   Future<Result<AppUser>> _post(String path, Map<String, Object?> body) async {

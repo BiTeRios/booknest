@@ -94,6 +94,21 @@ class Loan {
     'status': status.name,
   };
 
+  /// Полный снимок для offline-кэша (L6): все поля, которые читает fromJson.
+  Map<String, dynamic> toStorageJson() => {
+    'id': id,
+    'bookId': bookId,
+    'bookTitle': bookTitle,
+    'bookAuthor': bookAuthor,
+    'ownerId': ownerId,
+    'ownerName': ownerName,
+    'borrowerId': borrowerId,
+    'borrowerName': borrowerName,
+    'startDate': _isoDate(startDate),
+    'dueDate': _isoDate(dueDate),
+    'status': status.name,
+  };
+
   static String _isoDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-'
       '${d.day.toString().padLeft(2, '0')}';
